@@ -1,0 +1,265 @@
+public class HuffTree {
+    
+  
+  private class Node {
+    private char key;
+    private int freq;
+    private boolean leaf;
+    private Node left;
+    private Node right;
+    private Node next;
+    
+    private Node (char k, int f, boolean l) {
+      this.key = k;
+      this.freq = f;
+      this.leaf = l;
+      this.left = null;
+      this.right = null;
+      this.next = null; 
+    }
+    
+    private Node(int f, boolean l) {
+      //this.key = (char) null;
+      this.freq = f;
+      this.leaf = l;
+      this.left = null;
+      this.right = null;
+      this.next = null;
+    }
+  }
+  
+  
+  private Node Start;
+  
+  //private Node treeStart;
+  
+  
+  
+  /*
+   * constructor for the HuffTree class - it takes a linked list of
+   * nodes, ordered from smallest to largest, and creates the corresponding
+   * huffington tree
+   */
+  public HuffTree(int[] arr) {
+    
+    Start = null;
+    //treeStart = null;
+    
+    for (int i = 0; i < arr.length; i++) {
+      if (arr[i] > 0) {
+          Node n = new Node((char)i, arr[i], true);
+          InsertNode(n);
+      }  
+    }
+    
+    //printList();
+    
+    Node newNode;
+    
+    while(Start != null && Start.next != null) {
+      newNode = Merge(Start, Start.next);
+      Start = Start.next.next;
+      InsertNode(newNode);
+    }
+    
+    //levelOrderPrint();
+    
+  }
+  
+  private Node Merge(Node n, Node m) {
+    Node parent = new Node (n.freq + m.freq, false);
+    
+    if (n.freq < m.freq) {
+      parent.left = n;
+      parent.right = m;
+      parent.next = null;
+    }
+    else {
+      parent.left = m;
+      parent.right = n;
+      parent.next = null;
+    }
+    
+    return parent;
+    
+  }
+  
+  private void InsertNode(Node n) {
+    if (Start == null) {
+       Start = n;
+       return;
+    }
+    Node trav = Start;
+    Node prev = null;
+    //boolean inserted = false;
+    
+    while(trav != null) {
+      if (trav.freq < n.freq) {
+        prev = trav;
+        trav = trav.next;
+      }
+      else {
+        if (prev == null) {
+          n.next = Start;
+          Start = n;
+          return;
+        }
+        else {
+          n.next = trav;
+          prev.next = n;
+          return;
+        }
+      }
+    }
+    
+    prev.next = n;
+    
+  }
+  
+  
+  public Code[] CodeArray() {
+     Code[] arr = new Code[256];
+     
+     Code c = new Code();
+     
+     //c.addBit(1);
+     
+     CodeArrayHelper(arr, Start, c);
+     
+     //printCodeArray(arr);
+     
+     return arr;
+  }
+  
+  private void CodeArrayHelper(Code[] arr, Node n, Code c) {
+     
+    if (n.leaf) {
+       arr[(int)n.key] = new Code(c);
+       return;
+    }
+     
+    if (n.left != null) {
+       c.addBit(0);
+       CodeArrayHelper(arr, n.left, c);
+       c.removeBit();
+    }
+    if (n.right != null) {
+      c.addBit(1);
+      CodeArrayHelper(arr, n.right, c);
+      c.removeBit();
+    }
+  }
+  
+  private void printCodeArray(Code[] arr) {
+    for (int i = 0; i < arr.length; i++) {
+      if (arr[i] != null)
+        System.out.println((char) i + " - " + arr[i].toString());
+      //else
+        //System.out.println((char) i + " - no code");
+    }
+  }
+                            
+  
+  public void printList() {
+    Node trav = Start;
+    
+    while (trav != null) {
+      System.out.println((char)trav.key + " - " + trav.freq);
+      trav = trav.next;
+    }
+  }
+  
+  
+  public Decoder getDecoder() {
+    return new Decoder();
+  }
+  
+  
+  public class Decoder {
+    private Node curr;
+    private char nextChar;
+    
+    public Decoder () {
+      curr = Start;
+    }
+    
+    public char getChar() {
+      return nextChar;
+    }
+    
+    public boolean nextStep(int bit) {
+      if (curr.leaf)
+        curr = Start;
+      
+      if (!curr.leaf) {
+        if (bit == 1)
+          curr = curr.right;
+        else if (bit == 0)
+          curr = curr.left;
+      }
+      
+      if (curr.leaf) {
+        nextChar = curr.key;
+        return true;
+      }
+      
+      else
+        return false;
+    }
+      
+      
+      
+    }
+    
+  
+  
+  
+  /* 
+     * Inner class for temporarily associating a node's depth
+     * with the node, so that levelOrderPrint can print the levels
+     * of the tree on separate lines.
+     */
+    private class NodePlusDepth {
+        private Node node;
+        private int depth;
+        
+        private NodePlusDepth(Node node, int depth) {
+            this.node = node;
+            this.depth = depth;
+        }
+    }
+  
+  
+     public void levelOrderPrint() {
+        LLQueue<NodePlusDepth> q = new LLQueue<NodePlusDepth>();
+        
+        // Insert the root into the queue if the root is not null.
+        if (Start != null)
+            q.insert(new NodePlusDepth(Start, 0));
+        
+        // We continue until the queue is empty.  At each step,
+        // we remove an element from the queue, print its value,
+        // and insert its children (if any) into the queue.
+        // We also keep track of the current level, and add a newline
+        // whenever we advance to a new level.
+        int level = 0;
+        while (!q.isEmpty()) {
+            NodePlusDepth item = q.remove();
+            
+            if (item.depth > level) {
+                System.out.println();
+                level++;
+            }
+            
+            if (item.node.leaf == true)
+              System.out.print(item.node.key + " ");
+            
+            if (item.node.left != null)
+                q.insert(new NodePlusDepth(item.node.left, item.depth + 1));
+            if (item.node.right != null)
+                q.insert(new NodePlusDepth(item.node.right, item.depth + 1));
+        }
+    }
+    
+  
+}
